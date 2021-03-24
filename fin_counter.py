@@ -34,6 +34,21 @@ class Master(tk.Frame):       # создаем класс основного ф�
                                       command = self.delete_records)
         btn_delete_dialog.pack(side=tk.LEFT) # создаем кнопку удаления записи, которая вызывает функцию self.delete_records()
 
+        self.search_image = tk.PhotoImage(file='search.gif')  # создаем обьект иконки для кнопки
+        btn_search_dialog = tk.Button(toolbar, text='Поиск',
+                                      bg='#d7d8e0', bd=0,
+                                      image=self.search_image, compound=tk.TOP,
+                                      # чтоб иконка отображалась над названием кнопки
+                                      command=self.open_search_dialog)
+        btn_search_dialog.pack(side=tk.LEFT)  # создаем кнопку поиска записи, которая вызывает функцию self.open_search_dialog()
+
+        self.refresh_image = tk.PhotoImage(file='refresh.gif')  # создаем обьект иконки для кнопки
+        btn_refresh_dialog = tk.Button(toolbar, text='Обновить',
+                                      bg='#d7d8e0', bd=0,
+                                      image=self.refresh_image, compound=tk.TOP,
+                                      # чтоб иконка отображалась над названием кнопки
+                                      command=self.view_records)
+        btn_refresh_dialog.pack(side=tk.LEFT)  # создаем кнопку обновления записей, которая вызывает функцию self.veiw_records()
 
         self.tree = ttk.Treeview(self, columns=('ID', 'description', 'costs', 'total'), height=15, show='headings') # создаем таблицу для записей
         # свойство show='headings' --- чтоб непоказывать нулевую колонку (primary key)
@@ -69,16 +84,33 @@ class Master(tk.Frame):       # создаем класс основного ф�
 
     def delete_records(self): # функция удалениф записей
         for select_item in self.tree.selection(): # чтоб можно было удалять сразу несколько выделенных строк - перебираем в цикле обьект self.tree.selection()
-            self.db.curs.execute('''DELETE FROM finance WHERE id=?''', (self.tree.set(select_item, '#1'))) # для каждай строки из выделенного мышью обьема self.tree.select() - производим удаление из бд
+            self.db.curs.execute('''DELETE FROM finance WHERE id=?''', (self.tree.set(select_item, '#1'),)) # для каждай строки из выделенного мышью обьема self.tree.select() - производим удаление из бд
             # значение id строки берем из self.tree.set(select_item, '#1')
             self.db.conn.commit() # записываем изменения
             self.view_records() # отображаем обновленную информацию в виджетах
+
+
+    def search_records(self, description):
+        description = ('%'+description+'%',) # составляем кортеж из слова запроса для использования с оператором WHERE a LIKE b
+        self.db.curs.execute('''SELECT * FROM finance WHERE description LIKE ?''', description)
+        [self.tree.delete(i) for i in self.tree.get_children()] # очищаем поля в self.tree
+        [self.tree.insert('', 'end', values=row) for row in self.db.curs.fetchall()] # заполняем поля в self.tree данными, полученными из self.db.curs.fetchall()
+
+    # WHERE name LIKE 'text%' - находит любые значения, начинающиеся с text
+    # WHERE name LIKE '%text' - находит любые значения, заканчивающиеся на text
+    # WHERE name LIKE '%text%' - находит любые значения, которые имеют text в любой позиции
+    # WHERE name LIKE '_text%' - находит любые значения, которые имеют text во второй позиции
+    # WHERE name LIKE 'text_%_%' - находит любые значения, которые начинаются с text и имеют не менее трех символов
+    # WHERE name LIKE 'text%data' - находит любые значения, которые начинаются с text и заканчиваются data
 
     def open_dialog(self): # функция для вызова дочернего окна путем создания обьекта класса Child()
         Child()
 
     def open_update_dialog(self): # функция для вызова дочернего окна редактирования через создание обьекта класса Update()
         Update()
+
+    def open_search_dialog(self): # функция для вызова окна поиска
+        Search()
 
 class Child(tk.Toplevel): # класс дочернего окна, которое появляется при нажатии кнопки меню
     def __init__(self):   # Toplevel - класс для создания многооконных программ и дочерних окон
@@ -148,6 +180,32 @@ class Update(Child): # создаем класс Update - наследуем е�
         #                                                                    self.combobox.get(),
         #                                                                    self.entry_money.get()))
         self.btn_ok.destroy() # удаляем кнопку 'Добавить'
+
+
+class Search(tk.Toplevel): # создаем класс для поиска по бд, наследуемся от класса tk.Toplevel
+    def __init__(self):
+        super().__init__()
+        self.init_search()
+        self.view = app
+
+    def init_search(self):
+        self.title('Поиск') # изменяем название
+        self.geometry('300x100+400+300') # установим размеры окна поиска
+        self.resizable(False, False) # запрещаем менять размеры окна
+
+        label_search = tk.Label(self, text='Поиск') # лейбл с назваением
+        label_search.place(x=50, y=20)
+        self.entry_search = ttk.Entry(self) # поле для ввода поискового запроса
+        self.entry_search.place(x=105, y=20, width=165)
+
+        btn_cancel = ttk.Button(self, text='Закрыть', command=self.destroy)
+        btn_cancel.place(x=185, y=50)
+
+        btn_search = ttk.Button(self, text='Поиск')
+        btn_search.place(x=105, y=50)
+        btn_search.bind('<Button-1>', lambda event: self.view.search_records(self.entry_search.get()))
+        btn_search.bind('<Button-1>', lambda event: self.destroy(), add='+') # чтоб окно автоматически закрывалось после нажатия на кнопку
+        # add='+' - параметр для добавления на одно нажатие кнопки второй доп функции
 
 class DB:
     def __init__(self):
