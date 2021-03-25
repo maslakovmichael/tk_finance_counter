@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 
+BDD = 1
+
 class Master(tk.Frame):       # создаем класс основного фрейма, принадлежащего главному окну
     def __init__(self, root): # создаем конструктер класса
         super().__init__(root) # переопределяем конструкто родительского класса
@@ -16,27 +18,27 @@ class Master(tk.Frame):       # создаем класс основного ф�
 
         self.add_img = tk.PhotoImage(file='add.gif') # создаем обьект иконки для кнопки
         btn_open_dialog = tk.Button(toolbar, text='Добавить позицию',
-                                    command=self.open_dialog, bd=0,
+                                    command=self.open_dialog, bd=BDD,
                                     bg='#d7d8e0', compound=tk.TOP,  # чтоб иконка отображалась над названием кнопки
                                     image=self.add_img)
         btn_open_dialog.pack(side=tk.LEFT)
 
         self.edit_image = tk.PhotoImage(file='update.gif') # создаем обьект иконки для кнопки
-        btn_edit_dialog = tk.Button(toolbar, text='Редактировать', image=self.edit_image, bg='#d7d8e0', bd=0,
+        btn_edit_dialog = tk.Button(toolbar, text='Редактировать', image=self.edit_image, bg='#d7d8e0', bd=BDD,
                                     compound=tk.TOP, # чтоб иконка отображалась над названием кнопки
                                     command=self.open_update_dialog)
         btn_edit_dialog.pack(side=tk.LEFT) # создаем кнопку редактирования записи, которая вызывает функцию self.open_records()
 
         self.delete_image = tk.PhotoImage(file='delete.gif') # создаем обьект иконки для кнопки
         btn_delete_dialog = tk.Button(toolbar, text='Удалить позицию',
-                                      bg='#d7d8e0', bd=0,
+                                      bg='#d7d8e0', bd=BDD,
                                       image=self.delete_image, compound=tk.TOP, # чтоб иконка отображалась над названием кнопки
                                       command = self.delete_records)
         btn_delete_dialog.pack(side=tk.LEFT) # создаем кнопку удаления записи, которая вызывает функцию self.delete_records()
 
         self.search_image = tk.PhotoImage(file='search.gif')  # создаем обьект иконки для кнопки
         btn_search_dialog = tk.Button(toolbar, text='Поиск',
-                                      bg='#d7d8e0', bd=0,
+                                      bg='#d7d8e0', bd=BDD,
                                       image=self.search_image, compound=tk.TOP,
                                       # чтоб иконка отображалась над названием кнопки
                                       command=self.open_search_dialog)
@@ -44,7 +46,7 @@ class Master(tk.Frame):       # создаем класс основного ф�
 
         self.refresh_image = tk.PhotoImage(file='refresh.gif')  # создаем обьект иконки для кнопки
         btn_refresh_dialog = tk.Button(toolbar, text='Обновить',
-                                      bg='#d7d8e0', bd=0,
+                                      bg='#d7d8e0', bd=BDD,
                                       image=self.refresh_image, compound=tk.TOP,
                                       # чтоб иконка отображалась над названием кнопки
                                       command=self.view_records)
@@ -62,7 +64,11 @@ class Master(tk.Frame):       # создаем класс основного ф�
         self.tree.heading('costs', text='Статья дохода/расхода')
         self.tree.heading('total', text='Сумма')
 
-        self.tree.pack()
+        self.tree.pack(side=tk.LEFT)
+
+        scroll = tk.Scrollbar(self, command=self.tree.yview) # создаем скролл
+        scroll.pack(side=tk.LEFT, fill=tk.Y) # располагаем его слева от self.tree и вытягиваем по Y
+        self.tree.configure(yscrollcommand=scroll.set) # привязываем scroll к tree и активируем scroll
 
     def records(self, description, costs, total): # создаем функцию для добавления записи в базу данных
         self.db.insert_data(description, costs, total) # у обьекта self.db вызываем функцию добавления данных в поля
@@ -237,7 +243,7 @@ if __name__=='__main__':
     app = Master(root)
     app.pack()
     root.title('Учет финансов')
-    root.geometry('650x450+300+200')
+    root.geometry('665x450+300+200')
     root.resizable(False, False)
 
     root.mainloop()
