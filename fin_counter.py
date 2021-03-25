@@ -167,6 +167,8 @@ class Update(Child): # создаем класс Update - наследуем е�
         super().__init__()
         self.init_edit()
         self.view = app # для доступа к функции update_records - обьявляем обьект self.view как app
+        self.db = db
+        self.default_data() # функция для отображения изначального содержимого в окне редактирования
 
 
     def init_edit(self):
@@ -180,6 +182,15 @@ class Update(Child): # создаем класс Update - наследуем е�
         #                                                                    self.combobox.get(),
         #                                                                    self.entry_money.get()))
         self.btn_ok.destroy() # удаляем кнопку 'Добавить'
+
+    def default_data(self):
+        self.db.curs.execute('''SELECT * FROM finance WHERE id=?''',
+                             (self.view.tree.set(self.view.tree.selection()[0], '#1')))
+        row = self.db.curs.fetchone() # кортеж строки, полученной после sql-запроса
+        self.entry_description.insert(0, row[1])
+        if row[2] != 'Доход': # если содержимое третьего элемента кортежа row не равно 'Доход'
+            self.combobox.current(1) # тогда выставляем значение combobox как 'Расход'
+        self.entry_money.insert(0, row[3]) # вставляем значение четвертого элемента кортежа row в поле entry_money
 
 
 class Search(tk.Toplevel): # создаем класс для поиска по бд, наследуемся от класса tk.Toplevel
